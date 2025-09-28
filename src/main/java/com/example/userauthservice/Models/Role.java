@@ -1,5 +1,6 @@
 package com.example.userauthservice.Models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToMany;
@@ -16,5 +17,6 @@ public class Role extends BaseModel{
     String roleName;
 
     @ManyToMany(mappedBy = "roles")
+    @JsonBackReference
     List<User> users;
 }

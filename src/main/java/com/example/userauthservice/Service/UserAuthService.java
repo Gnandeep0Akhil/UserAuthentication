@@ -4,11 +4,12 @@ import com.example.userauthservice.Models.Role;
 import com.example.userauthservice.Models.User;
 import com.example.userauthservice.Repository.RoleRepository;
 import com.example.userauthservice.Repository.UserRepository;
-import com.example.userauthservice.UserDTOs.LoginResponseDTO;
+import com.example.userauthservice.Utils.JwtGenerationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,9 @@ public class UserAuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtGenerationUtil jwtGenerationUtil;
 
     public Boolean registerUser(String firstName, String lastName, String email, String password, List<String> roles) {
         List<Role> finalRoles = new ArrayList<>();
@@ -52,11 +56,19 @@ public class UserAuthService {
         return passwordEncoder.matches(password, savedUser.getPassword());
     }
 
-    public Boolean loginUser(String email, String password) {
+    public String loginUser(String email, String password) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
         );
+        if (!authentication.isAuthenticated()) {
+            throw new RuntimeException("Authentication failed");
+        }
 
-        return authentication.isAuthenticated();
+        List<String> roles = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+        return jwtGenerationUtil.generateToken(authentication.getName(), String.join(",", roles));
+    }
+
+    public List<User> getUsers() {
+        return userRepository.findAll();
     }
 }
